@@ -2,7 +2,7 @@ var app = require('http').createServer(handler)
 var io = require('socket.io')(app);
 
 function handler(req, res) {
-    
+
 }
 
 app.listen(4444);
@@ -13,7 +13,7 @@ io.on('connection', function (socket) {
     socket.on('join', function (data) {
 
         console.log('User: ' + data.user + ' joined room: ' + data.stateId);
-        
+
         socket.join(data.stateId);
         socket.broadcast.to(data.stateId).emit('joined', data);
 
@@ -79,6 +79,14 @@ io.on('connection', function (socket) {
         console.log('Set values for socket: ' + data.id + ' in room: ' + data.stateId);
 
         io.to(data.id).emit('setValues', data);
+
+    });
+
+    socket.on('syncFeed', function(data) {
+
+        console.log('Sync Feed in room: ' + data.stateId);
+
+        socket.broadcast.to(data.stateId).emit('syncFeed', data);
 
     });
 
