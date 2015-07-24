@@ -1,12 +1,13 @@
 {
-	"name": "manywho-collaboration-server",
-	"version": "0.5.0",
-	"author": "ManyWho",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/manywho/ManyWho_Collaboration_Server.git"
-	},
-	"dependencies": {
-		"socket.io": "^1.3.2"
-	}
+  "name": "manywho-collaboration-server",
+  "version": "1.2.0",
+  "author": "ManyWho",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/manywho/ManyWho_Collaboration_Server.git"
+  },
+  "dependencies": {
+    "socket.io": "^1.3.2",
+    "socket.io-redis": "^0.1.4"
+  }
 }

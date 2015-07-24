@@ -5,8 +5,28 @@ function handler(req, res) {
 
 }
 
+var extraStartupMessage = '';
+
+process.argv.forEach(function (value, index, array) {
+
+    if (value.indexOf('--redis') === 0) {
+
+        var redis = require('socket.io-redis');
+
+        var redisConnectionString = value.substring(8);
+
+        io.adapter(redis(redisConnectionString, {
+            key: 'collaboration:'
+        }));
+
+        extraStartupMessage += ', connected to Redis at ' + redisConnectionString;
+
+    }
+
+});
+
 app.listen(4444);
-console.log('Collaboration server listening on 4444');
+console.log('Collaboration server listening on 4444' + extraStartupMessage);
 
 io.on('connection', function (socket) {
 
