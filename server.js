@@ -1,4 +1,4 @@
-var app = require('http').createServer(handler)
+var app = require('http').createServer(handler);
 var io = require('socket.io')(app);
 
 function handler(req, res) {
@@ -69,6 +69,24 @@ io.on('connection', function (socket) {
         console.log('Move in room: ' + data.stateId);
 
         socket.broadcast.to(data.stateId).emit('move', data);
+
+    });
+
+    socket.on('flowOut', function (data) {
+
+        console.log('FlowOut to: ' + data.subStateId);
+
+        socket.leave(data.stateId);
+        socket.broadcast.to(data.stateId).emit('flowOut', data);
+
+    });
+
+    socket.on('returnToParent', function (data) {
+
+        console.log('Returning to parent: ' + data.parentStateId);
+
+        socket.leave(data.stateId);
+        socket.broadcast.to(data.stateId).emit('returnToParent', data);
 
     });
 
