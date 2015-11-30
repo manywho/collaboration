@@ -1,4 +1,4 @@
-var app = require('http').createServer(handler)
+var app = require('http').createServer(handler);
 var io = require('socket.io')(app);
 
 function handler(req, res) {
@@ -58,7 +58,7 @@ io.on('connection', function (socket) {
 
     socket.on('sync', function (data) {
 
-        console.log('Sync: ' + data.stateId + ' in room: ' + data.stateId);
+        console.log('Sync state: ' + data.stateId + ' in room: ' + data.stateId);
 
         socket.broadcast.to(data.stateId).emit('sync', data);
 
@@ -66,37 +66,60 @@ io.on('connection', function (socket) {
 
     socket.on('move', function (data) {
 
-        console.log('Move: ' + data.flowstateIdKey + ' in room: ' + data.stateId);
+        console.log('Move in room: ' + data.stateId);
 
         socket.broadcast.to(data.stateId).emit('move', data);
 
     });
 
+    socket.on('flowOut', function (data) {
+
+        console.log('FlowOut to: ' + data.subStateId);
+
+        socket.leave(data.stateId);
+        socket.broadcast.to(data.stateId).emit('flowOut', data);
+
+    });
+
+    socket.on('returnToParent', function (data) {
+
+        console.log('Returning to parent: ' + data.parentStateId);
+
+        socket.leave(data.stateId);
+        socket.broadcast.to(data.stateId).emit('returnToParent', data);
+
+    });
+
     socket.on('getValues', function (data) {
 
-        console.log('Get values for socket: ' + data.id + ' in room: ' + data.stateId);
+        console.log('Get values for user: ' + data.id + ' in room: ' + data.stateId);
 
         var targetId = data.owner;
 
         // If a user isn't specified to get the latest values from then go to the first user in the room
         if (!targetId) {
 
-            var clientIds = Object.keys(io.nsps['/'].adapter.rooms[data.stateId]);
-            if (clientIds.length > 1) {
+            var clients = io.nsps['/'].adapter.rooms[data.stateId];
+            if (clients) {
 
-                targetId = clientIds[0];
+                var clientIds = Object.keys(clients);
+                if (clientIds.length > 0) {
+                    targetId = clientIds[0];
+                }
 
             }
 
         }
 
-        io.to(targetId).emit('getValues', data);
+        if (targetId) {
+            io.to(targetId).emit('getValues', data);
+        }
 
     });
 
     socket.on('setValues', function (data) {
 
-        console.log('Set values for socket: ' + data.id + ' in room: ' + data.stateId);
+        console.log('Set values for user: ' + data.id + ' in room: ' + data.stateId);
 
         io.to(data.id).emit('setValues', data);
 
