@@ -5,6 +5,12 @@ function handler(req, res) {
 
 }
 
+function convertToArray(object) {
+    return Object.keys(object).map(function (value) {
+        return [value];
+    });
+}
+
 var extraStartupMessage = '';
 
 process.argv.forEach(function (value, index, array) {
@@ -35,6 +41,9 @@ io.on('connection', function (socket) {
         console.log('User: ' + data.user + ' joined room: ' + data.stateId);
 
         socket.join(data.stateId);
+
+        data.users = convertToArray(io.sockets.adapter.rooms[data.stateId]).length;
+
         socket.broadcast.to(data.stateId).emit('joined', data);
 
     });
@@ -44,6 +53,9 @@ io.on('connection', function (socket) {
         console.log('User: ' + data.user + ' left room: ' + data.stateId);
 
         socket.leave(data.stateId);
+
+        data.users = convertToArray(io.sockets.adapter.rooms[data.stateId]).length;
+
         socket.broadcast.to(data.stateId).emit('left', data);
 
     });
