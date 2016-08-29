@@ -31,7 +31,7 @@ process.argv.forEach(function (value, index, array) {
 
 });
 
-app.listen(4444);
+app.listen(4444, '0.0.0.0');
 console.log('Collaboration server listening on 4444' + extraStartupMessage);
 
 io.on('connection', function (socket) {
