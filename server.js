@@ -50,14 +50,13 @@ io.on('connection', function (socket) {
 
         console.log('User: ' + data.user + ' left room: ' + data.stateId);
 
-        socket.leave(data.stateId);
-
         var users = io.sockets.adapter.rooms[data.stateId];
         if (users)
-            data.users = Object.keys(users).length;
+            data.users = Object.keys(users).length - 1;
         else
             data.users = 1;
 
+        socket.leave(data.stateId);
         socket.broadcast.to(data.stateId).emit('left', data);
 
     });
