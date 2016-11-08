@@ -28,15 +28,16 @@ process.argv.forEach(function (value, index, array) {
 
 if (port && host && password) {
     var adapter = require('socket.io-redis');
-    var redis = require('ioredis');
-    var pub = redis(port, host, { auth_pass: password });
-    var sub = redis(port, host, { return_buffers: true, auth_pass: password });
-
-    var redisConnectionString = value.substring(8);
+    var ioredis = require('ioredis');
+    var redis = new ioredis({
+        sentinels: [{ host: host, port: port }, { host: host, port: port }],
+        name: 'manywho',
+        password: password
+    });
 
     io.adapter(adapter({
-        pubClient: pub,
-        subClient: sub,
+        pubClient: redis,
+        subClient: redis,
         subEvent: 'messageBuffer',
         key: 'collaboration:'
     }));
