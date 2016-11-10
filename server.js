@@ -5,31 +5,45 @@ function handler(req, res) {
 
 }
 
-function convertToArray(object) {
-    return Object.keys(object).map(function (value) {
-        return [value];
-    });
-}
-
 var extraStartupMessage = '';
+var port = null;
+var host = null;
+var password = null;
 
 process.argv.forEach(function (value, index, array) {
+    switch (value.toUpperCase()) {
+        case '--REDIS-HOST':
+            host = value;
+            break;
 
-    if (value.indexOf('--redis') === 0) {
+        case '--REDIS-PORT':
+            port = value;
+            break;
 
-        var redis = require('socket.io-redis');
-
-        var redisConnectionString = value.substring(8);
-
-        io.adapter(redis(redisConnectionString, {
-            key: 'collaboration:'
-        }));
-
-        extraStartupMessage += ', connected to Redis at ' + redisConnectionString;
-
+        case '--REDIS-PASSWORD':
+            password = value;
+            break;
     }
-
 });
+
+if (port && host && password) {
+    var adapter = require('socket.io-redis');
+    var ioredis = require('ioredis');
+    var redis = new ioredis({
+        sentinels: [{ host: host, port: port }, { host: host, port: port }],
+        name: 'manywho',
+        password: password
+    });
+
+    io.adapter(adapter({
+        pubClient: redis,
+        subClient: redis,
+        subEvent: 'messageBuffer',
+        key: 'collaboration:'
+    }));
+
+    extraStartupMessage += ', connected to Redis at ' + redisConnectionString;
+}
 
 app.listen(4444, '0.0.0.0');
 console.log('Collaboration server listening on 4444' + extraStartupMessage);
@@ -42,7 +56,11 @@ io.on('connection', function (socket) {
 
         socket.join(data.stateId);
 
-        data.users = convertToArray(io.sockets.adapter.rooms[data.stateId]).length;
+        var users = io.sockets.adapter.rooms[data.stateId];
+        if (users)
+            data.users = Object.keys(users).length;
+        else
+            data.users = 1;
 
         socket.broadcast.to(data.stateId).emit('joined', data);
 
@@ -52,10 +70,13 @@ io.on('connection', function (socket) {
 
         console.log('User: ' + data.user + ' left room: ' + data.stateId);
 
+        var users = io.sockets.adapter.rooms[data.stateId];
+        if (users)
+            data.users = Object.keys(users).length - 1;
+        else
+            data.users = 1;
+
         socket.leave(data.stateId);
-
-        data.users = convertToArray(io.sockets.adapter.rooms[data.stateId]).length;
-
         socket.broadcast.to(data.stateId).emit('left', data);
 
     });
