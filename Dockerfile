@@ -1,7 +1,11 @@
-FROM mhart/alpine-node-base
+FROM mhart/alpine-node
 
-EXPOSE 3000
-CMD ["node", "server.js"]
+EXPOSE 4444
+ENTRYPOINT ["node", "server.js"]
 
 WORKDIR /src
-ADD . .
+COPY package.json .
+
+RUN npm install --production
+
+COPY server.js .

@@ -8,44 +8,46 @@ function handler(req, res) {
 var extraStartupMessage = '';
 var port = null;
 var host = null;
-var password = null;
 
-process.argv.forEach(function (value, index, array) {
-    switch (value.toUpperCase()) {
+process.argv.forEach(function (value) {
+    var argument = value.split('=');
+
+    switch (argument[0].toUpperCase()) {
         case '--REDIS-HOST':
-            host = value;
+            host = argument[1];
             break;
 
         case '--REDIS-PORT':
-            port = value;
-            break;
-
-        case '--REDIS-PASSWORD':
-            password = value;
+            port = argument[1];
             break;
     }
 });
 
-if (port && host && password) {
+if (port && host) {
     var adapter = require('socket.io-redis');
     var ioredis = require('ioredis');
-    var redis = new ioredis({
-        sentinels: [{ host: host, port: port }, { host: host, port: port }],
-        name: 'manywho',
-        password: password
+
+    var pub = new ioredis({
+        sentinels: [{ host: host, port: port }],
+        name: 'manywho'
+    });
+
+    var sub = new ioredis({
+        sentinels: [{ host: host, port: port }],
+        name: 'manywho'
     });
 
     io.adapter(adapter({
-        pubClient: redis,
-        subClient: redis,
+        pubClient: pub,
+        subClient: sub,
         subEvent: 'messageBuffer',
         key: 'collaboration:'
     }));
 
-    extraStartupMessage += ', connected to Redis at ' + redisConnectionString;
+    extraStartupMessage += ' and connected to Redis at ' + host + ':' + port;
 }
 
-app.listen(4444);
+app.listen(4444, '0.0.0.0');
 console.log('Collaboration server listening on 4444' + extraStartupMessage);
 
 io.on('connection', function (socket) {
