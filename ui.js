@@ -29,16 +29,17 @@ module.exports = function (socket, url, authenticate) {
 
 const setupHandlers = function(socket) {
 
-    const isAuthenticated = (handler) => {
-        if (socket.isAuthenticated)
-            return handler
-        else
-            return null;
-    }
+    const execute = (handler, data, ack) => {
+        if (socket.isAuthenticated) {
+            handler(data);
+            if (ack)
+                ack();
+        }
+    };
 
-    socket.on('join', isAuthenticated(function (data) {
+    const join = data => {
         console.log('User: ' + data.user + ' joined room: ' + data.stateId);
-
+        
         socket.join(data.stateId);
 
         const users = socket.adapter.rooms[data.stateId];
@@ -48,9 +49,9 @@ const setupHandlers = function(socket) {
             data.users = 1;
 
         socket.broadcast.to(data.stateId).emit('joined', data);
-    }));
+    }
 
-    socket.on('left', isAuthenticated(function (data) {
+    const left = data => {
         console.log('User: ' + data.user + ' left room: ' + data.stateId);
 
         const users = socket.adapter.rooms[data.stateId];
@@ -61,45 +62,45 @@ const setupHandlers = function(socket) {
 
         socket.leave(data.stateId);
         socket.broadcast.to(data.stateId).emit('left', data);
-    }));
+    };
 
-    socket.on('change', isAuthenticated(function (data) {
+    const change = data =>  {
         console.log('Change to: ' + data.id + ' in room: ' + data.stateId);
         socket.broadcast.to(data.stateId).emit('change', data);
-    }));
+    };
 
-    socket.on('sync', isAuthenticated(function (data) {
+    const sync = data => {
         console.log('Sync state: ' + data.stateId + ' in room: ' + data.stateId);
         socket.broadcast.to(data.stateId).emit('sync', data);
-    }));
+    };
 
-    socket.on('move', isAuthenticated(function (data) {
+    const move = data => {
         console.log('Move in room: ' + data.stateId);
         socket.broadcast.to(data.stateId).emit('move', data);
-    }));
+    };
 
-    socket.on('done', isAuthenticated(function(data) {
+    const done = data => {
         console.log('Done in room: ' + data.stateId);
         socket.broadcast.to(data.stateId).emit('done', data);
-    }));
+    };
 
-    socket.on('flowOut', isAuthenticated(function (data) {
+    const flowOut = data => {
         console.log('FlowOut to: ' + data.subStateId);
-
+        
         socket.leave(data.stateId);
         socket.broadcast.to(data.stateId).emit('flowOut', data);
-    }));
+    };
 
-    socket.on('returnToParent', isAuthenticated(function (data) {
+    const returnToParent = data => {
         console.log('Returning to parent: ' + data.parentStateId);
-
+        
         socket.leave(data.stateId);
         socket.broadcast.to(data.stateId).emit('returnToParent', data);
-    }));
+    };
 
-    socket.on('getValues', isAuthenticated(function (data) {
+    const getValues = data => {
         console.log('Get values for user: ' + data.id + ' in room: ' + data.stateId);
-
+        
         let targetId = data.owner;
 
         // If a user isn't specified to get the latest values from then go to the first user in the room
@@ -114,20 +115,27 @@ const setupHandlers = function(socket) {
 
         if (targetId)
             socket.broadcast.to(targetId).emit('getValues', data);
-    }));
+    };
 
-    socket.on('setValues', isAuthenticated(function (data) {
+    const setValues = data => {
         console.log('Set values for user: ' + data.id + ' in room: ' + data.stateId);
         socket.broadcast.to(data.id).emit('setValues', data);
-    }));
+    };
 
-    socket.on('syncFeed', isAuthenticated(function(data) {
+    const syncFeed = data => {
         console.log('Sync Feed in room: ' + data.stateId);
         socket.broadcast.to(data.stateId).emit('syncFeed', data);
-    }));
+    };
 
-    socket.on('cursor', isAuthenticated(function(data) {
-        console.log('Cursor: ' + data.x + ' ' + data.y);
-        socket.broadcast.to(data.stateId).emit('cursor', data);
-    }));
+    socket.on('join', (data, ack) => execute(join, data, ack));
+    socket.on('left', (data, ack) => execute(left, data, ack));
+    socket.on('change', (data, ack) => execute(change, data, ack));
+    socket.on('sync', (data, ack) => execute(sync, data, ack));
+    socket.on('move', (data, ack) => execute(move, data, ack));
+    socket.on('done', (data, ack) => execute(done, data, ack));
+    socket.on('flowOut', (data, ack) => execute(flowOut, data, ack));
+    socket.on('returnToParent', (data, ack) => execute(returnToParent, data, ack));
+    socket.on('getValues', (data, ack) => execute(getValues, data, ack));
+    socket.on('setValues', (data, ack) => execute(setValues, data, ack));
+    socket.on('syncFeed', (data, ack) => execute(syncFeed, data, ack));
 }
