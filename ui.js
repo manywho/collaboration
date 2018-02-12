@@ -42,7 +42,7 @@ const setupHandlers = function(socket) {
         
         socket.join(data.stateId);
 
-        const users = socket.adapter.rooms[data.stateId];
+        const users = socket.adapter.rooms[data.stateId].sockets;
         if (users)
             data.users = Object.keys(users).length;
         else
@@ -54,7 +54,7 @@ const setupHandlers = function(socket) {
     const left = data => {
         console.log('User: ' + data.user + ' left room: ' + data.stateId);
 
-        const users = socket.adapter.rooms[data.stateId];
+        const users = socket.adapter.rooms[data.stateId].sockets;
         if (users)
             data.users = Object.keys(users).length - 1;
         else
