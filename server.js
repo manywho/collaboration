@@ -31,12 +31,12 @@ if (port && host) {
 
     const pub = new ioredis({
         sentinels: [{ host: host, port: port }],
-        name: 'mymaster'
+        name: 'manywho'
     });
 
     const sub = new ioredis({
         sentinels: [{ host: host, port: port }],
-        name: 'mymaster'
+        name: 'manywho'
     });
 
     io.adapter(adapter({
