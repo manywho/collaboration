@@ -1,40 +1,34 @@
 const request = require('request');
 
-module.exports = function (socket, url, authenticate) {
-    
+module.exports = function (socket, url, authenticate, io) {
     socket.isAuthenticated = !authenticate;
-
-    if (authenticate)
-        socket.on('authentication', data => {
-            const options = {
-                uri: `${url}/api/run/1/authorization/${data.stateId}`,
-                headers: {
-                    authorization: data.authorization,
-                    manywhoTenant: data.tenantId
-                }
-            };
-            request(options, (err, res, body) => {            
-                if (res.statusCode >= 200 && res.statusCode < 300) {
-                    socket.emit('authenticated', res);
-                    socket.isAuthenticated = true;
-                    setupHandlers(socket);
-                }
-                else
-                    socket.emit('unauthorized', null, () => socket.disconnect());
+    
+        if (authenticate)
+            socket.on('authentication', data => {
+                const options = {
+                    uri: `${url}/api/run/1/authorization/${data.stateId}`,
+                    headers: {
+                        authorization: data.authorization,
+                        manywhoTenant: data.tenantId
+                    }
+                };
+                request(options, (err, res, body) => {            
+                    if (res.statusCode >= 200 && res.statusCode < 300) {
+                        socket.emit('authenticated', res);
+                        socket.isAuthenticated = true;
+                        setupHandlers(socket, io);
+                    }
+                    else
+                        socket.emit('unauthorized', null, () => socket.disconnect());
+                });
             });
-        });
-    else
-        setupHandlers(socket);
-};
+        else
+            setupHandlers(socket, io);
+}
 
-const setupHandlers = function(socket) {
-
-    const execute = (handler, data, ack) => {
-        if (socket.isAuthenticated) {
-            handler(data);
-            if (ack)
-                ack();
-        }
+const setupHandlers = function(socket, io) {    
+    const execute = (handler, data) => {
+        handler(data);
     };
 
     const join = data => {
@@ -42,21 +36,24 @@ const setupHandlers = function(socket) {
         
         socket.join(data.stateId);
 
-        const users = socket.adapter.rooms[data.stateId].sockets;
-        if (users)
-            data.users = Object.keys(users).length;
-        else
-            data.users = 1;
+        io.in(data.stateId).clients((err, clients) => {
+            if (err) throw err;
+            if (clients)
+                data.users = clients.length;
+            else
+                data.users = 1;
 
-        socket.broadcast.to(data.stateId).emit('joined', data);
+            socket.broadcast.to(data.stateId).emit('joined', data);
+        });
+
     }
 
     const left = data => {
         console.log('User: ' + data.user + ' left room: ' + data.stateId);
 
-        const users = socket.adapter.rooms[data.stateId].sockets;
+        const users = socket.adapter.rooms[data.stateId];
         if (users)
-            data.users = Object.keys(users).length - 1;
+            data.users = Object.keys(users.sockets).length - 1;
         else
             data.users = 1;
 
@@ -138,4 +135,4 @@ const setupHandlers = function(socket) {
     socket.on('getValues', (data, ack) => execute(getValues, data, ack));
     socket.on('setValues', (data, ack) => execute(setValues, data, ack));
     socket.on('syncFeed', (data, ack) => execute(syncFeed, data, ack));
-}
+};

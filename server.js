@@ -31,12 +31,12 @@ if (port && host) {
 
     const pub = new ioredis({
         sentinels: [{ host: host, port: port }],
-        name: 'manywho'
+        name: 'mymaster'
     });
 
     const sub = new ioredis({
         sentinels: [{ host: host, port: port }],
-        name: 'manywho'
+        name: 'mymaster'
     });
 
     io.adapter(adapter({
@@ -49,8 +49,8 @@ if (port && host) {
     extraStartupMessage += ' and connected to Redis at ' + host + ':' + port;
 }
 
-io.of('/').on('connection', socket => ui(socket, url, false));
-io.of('/ui').on('connection', socket => ui(socket, url, true));
+io.of('/').on('connection', socket => ui(socket, url, false, io));
+io.of('/ui').on('connection', socket => ui(socket, url, true, io));
 
 app.listen(4444, '0.0.0.0');
 console.log('Collaboration server listening on 4444' + extraStartupMessage);
