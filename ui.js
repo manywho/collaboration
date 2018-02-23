@@ -45,20 +45,21 @@ const setupHandlers = function(socket, io) {
 
             socket.broadcast.to(data.stateId).emit('joined', data);
         });
-
     }
 
     const left = data => {
         console.log('User: ' + data.user + ' left room: ' + data.stateId);
 
-        const users = socket.adapter.rooms[data.stateId];
-        if (users)
-            data.users = Object.keys(users.sockets).length - 1;
-        else
-            data.users = 1;
+        io.in(data.stateId).clients((err, clients) => {
+            if (err) throw err;
+            if (clients)
+                data.users = clients.length - 1;
+            else
+                data.users = 1;
 
-        socket.leave(data.stateId);
-        socket.broadcast.to(data.stateId).emit('left', data);
+            socket.leave(data.stateId);
+            socket.broadcast.to(data.stateId).emit('left', data);
+        });
     };
 
     const change = data =>  {
