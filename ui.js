@@ -28,7 +28,11 @@ module.exports = function (socket, url, authenticate, io) {
 
 const setupHandlers = function(socket, io) {    
     const execute = (handler, data) => {
-        handler(data);
+        if (socket.isAuthenticated) {
+            handler(data);
+            if (ack)	
+                ack();	
+        }
     };
 
     const join = data => {
