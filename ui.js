@@ -27,7 +27,7 @@ module.exports = function (socket, url, authenticate, io) {
 }
 
 const setupHandlers = function(socket, io) {    
-    const execute = (handler, data) => {
+    const execute = (handler, data, ack) => {
         if (socket.isAuthenticated) {
             handler(data);
             if (ack)	
